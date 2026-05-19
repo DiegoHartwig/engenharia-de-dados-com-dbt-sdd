@@ -55,11 +55,13 @@ Exemplo:
 olist_orders_dataset
 olist_customers_dataset
 olist_order_items_dataset
+```
 
-A partir da camada silver, os modelos deverão usar nomes em português.
+A partir da camada `silver`, os modelos deverão usar nomes em português.
 
 Exemplos:
 
+```text
 silver_pedidos
 silver_clientes
 silver_itens_pedido
@@ -67,11 +69,13 @@ silver_pagamentos
 silver_avaliacoes
 silver_produtos
 silver_vendedores
+```
 
-Na camada gold, os modelos também deverão usar nomes em português.
+Na camada `gold`, os modelos também deverão usar nomes em português.
 
 Exemplos:
 
+```text
 dim_clientes
 dim_produtos
 dim_vendedores
@@ -81,53 +85,59 @@ mart_vendas_diarias
 mart_vendas_mensais
 mart_desempenho_entregas
 mart_satisfacao_clientes
-Consequências positivas
+```
+
+## Consequências positivas
 
 Esta decisão traz os seguintes benefícios:
 
-torna o projeto mais didático para profissionais brasileiros;
-facilita a leitura das especificações e regras de negócio;
-melhora a clareza dos modelos analíticos;
-aproxima o projeto do contexto da base utilizada;
-reforça o objetivo educacional e de portfólio;
-facilita a publicação futura de conteúdos explicativos em português.
-Consequências negativas
+- torna o projeto mais didático para profissionais brasileiros;
+- facilita a leitura das especificações e regras de negócio;
+- melhora a clareza dos modelos analíticos;
+- aproxima o projeto do contexto da base utilizada;
+- reforça o objetivo educacional e de portfólio;
+- facilita a publicação futura de conteúdos explicativos em português.
+
+## Consequências negativas
 
 Esta decisão também traz alguns cuidados:
 
-pode reduzir a acessibilidade para leitores internacionais;
-algumas ferramentas, documentações e exemplos da comunidade usam inglês como padrão;
-alguns termos técnicos não devem ser traduzidos de forma artificial;
-será necessário manter consistência na nomenclatura em português.
-Alternativas consideradas
-Alternativa 1 — Projeto totalmente em inglês
+- pode reduzir a acessibilidade para leitores internacionais;
+- algumas ferramentas, documentações e exemplos da comunidade usam inglês como padrão;
+- alguns termos técnicos não devem ser traduzidos de forma artificial;
+- será necessário manter consistência na nomenclatura em português.
+
+## Alternativas consideradas
+
+### Alternativa 1 — Projeto totalmente em inglês
 
 Essa alternativa foi considerada por ser comum em projetos open source e por facilitar o acesso internacional.
 
 No entanto, foi descartada nesta fase porque o objetivo principal do projeto é didático e voltado à demonstração de boas práticas em português.
 
-Alternativa 2 — Documentação em português e código em inglês
+### Alternativa 2 — Documentação em português e código em inglês
 
 Essa alternativa também foi considerada.
 
 Ela teria a vantagem de manter o código próximo de padrões internacionais, mas reduziria a proposta didática de demonstrar um projeto completo de Engenharia de Dados em português.
 
-Alternativa 3 — Projeto híbrido sem regra definida
+### Alternativa 3 — Projeto híbrido sem regra definida
 
 Essa alternativa foi descartada porque poderia gerar inconsistência entre documentação, modelos, testes e critérios de aceite.
 
-Critérios de aceite da decisão
+## Critérios de aceite da decisão
 
 Esta decisão será considerada corretamente aplicada quando:
 
-a documentação principal estiver em português;
-as especificações SDD estiverem em português;
-os modelos silver e gold estiverem nomeados em português;
-os testes singulares estiverem nomeados em português;
-os critérios de aceite estiverem em português;
-os termos técnicos oficiais do dbt forem preservados quando fizer sentido;
-a nomenclatura for consistente ao longo do projeto.
-Revisão futura
+- a documentação principal estiver em português;
+- as especificações SDD estiverem em português;
+- os modelos silver e gold estiverem nomeados em português;
+- os testes singulares estiverem nomeados em português;
+- os critérios de aceite estiverem em português;
+- os termos técnicos oficiais do dbt forem preservados quando fizer sentido;
+- a nomenclatura for consistente ao longo do projeto.
+
+## Revisão futura
 
 Esta decisão poderá ser revista caso o projeto passe a ter como objetivo principal publicação internacional, colaboração com pessoas não falantes de português ou adaptação para um template open source global.
 
