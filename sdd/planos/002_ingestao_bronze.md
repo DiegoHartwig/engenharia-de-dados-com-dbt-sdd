@@ -7,7 +7,8 @@
 | Nome do plano | Ingestão da camada bronze |
 | Tipo | Ingestão |
 | Relacionado à spec | `sdd/especificacoes/001_arquitetura.md` |
-| Status | Rascunho |
+| ADR relacionada | `sdd/decisoes/ADR-004-uso-de-ingestao-simples-via-python.md` |
+| Status | Revisado |
 | Responsável | Diego Hartwig |
 
 ## 2. Objetivo do plano
@@ -16,19 +17,41 @@ Este plano define como será realizada a ingestão dos arquivos públicos da Oli
 
 O objetivo é carregar os arquivos CSV no schema `bronze`, preservando os dados o mais próximo possível da origem, sem aplicar regras de negócio, deduplicações, enriquecimentos ou transformações analíticas.
 
-## 3. Escopo
+## 3. Decisão de ingestão
+
+A ingestão será feita por meio de um script Python simples e versionado no repositório.
+
+A decisão foi registrada em:
+
+```text
+sdd/decisoes/ADR-004-uso-de-ingestao-simples-via-python.md
+```
+
+A arquitetura da ingestão será:
+
+```text
+CSV Olist
+    ↓
+Script Python de ingestão
+    ↓
+PostgreSQL - bronze
+```
+
+## 4. Escopo
 
 Este plano cobre:
 
 - organização dos arquivos CSV da Olist em `dados/brutos/`;
 - validação da presença dos arquivos esperados;
-- definição dos nomes das tabelas na camada `bronze`;
-- configuração da ingestão para PostgreSQL;
+- criação de script Python de ingestão;
+- leitura dos arquivos CSV;
+- criação das tabelas no schema `bronze`;
+- carga dos dados no PostgreSQL;
 - preservação da estrutura original dos dados;
 - validação da carga no schema `bronze`;
 - registro da validação da ingestão.
 
-## 4. Fora de escopo
+## 5. Fora de escopo
 
 Este plano não cobre:
 
@@ -45,17 +68,20 @@ Este plano não cobre:
 - RAG;
 - transformações analíticas durante a ingestão.
 
-## 5. Dependências
+## 6. Dependências
 
 | Tipo | Nome | Descrição |
 |---|---|---|
 | Banco | PostgreSQL | Banco local executando via Docker Compose |
 | Schema | `bronze` | Schema de destino dos dados ingeridos |
 | Dataset | Olist | Base pública brasileira de e-commerce |
-| Ferramenta | Airbyte | Ferramenta prevista para ingestão dos CSVs |
+| Linguagem | Python | Linguagem usada no script de ingestão |
+| Biblioteca | pandas | Leitura dos arquivos CSV |
+| Biblioteca | SQLAlchemy | Escrita dos dados no PostgreSQL |
+| Biblioteca | psycopg2 | Driver de conexão com PostgreSQL |
 | Pasta | `dados/brutos/` | Pasta local com os arquivos CSV da Olist |
 
-## 6. Arquivos esperados da Olist
+## 7. Arquivos esperados da Olist
 
 Os arquivos esperados em `dados/brutos/` são:
 
@@ -71,33 +97,23 @@ olist_sellers_dataset.csv
 product_category_name_translation.csv
 ```
 
-## 7. Estratégia de ingestão
+## 8. Estrutura proposta para ingestão
 
-A estratégia de ingestão será:
+Criar uma pasta específica para scripts de ingestão:
 
 ```text
-CSV Olist
-    ↓
-Airbyte
-    ↓
-PostgreSQL schema bronze
+ingestao/
+├── carregar_bronze_olist.py
+└── README.md
 ```
 
-A ingestão deverá preservar os dados próximos da origem.
+O script principal será:
 
-Não devem ser aplicadas na ingestão:
+```text
+ingestao/carregar_bronze_olist.py
+```
 
-- regras de negócio;
-- renomeações para português;
-- filtros analíticos;
-- agregações;
-- deduplicações;
-- enriquecimentos;
-- cálculo de métricas.
-
-Essas transformações serão responsabilidade das camadas `silver` e `gold`.
-
-## 8. Tabelas esperadas na bronze
+## 9. Estratégia de nomes das tabelas bronze
 
 As tabelas na camada `bronze` devem preservar nomes próximos aos arquivos originais.
 
@@ -115,11 +131,50 @@ bronze.olist_sellers_dataset
 bronze.product_category_name_translation
 ```
 
-Se a ferramenta de ingestão gerar nomes com prefixos, sufixos ou metadados próprios, essa diferença deverá ser registrada na validação.
+A regra será:
 
-## 9. Estratégia de tipos
+```text
+nome_do_arquivo_csv_sem_extensao → nome_da_tabela_bronze
+```
 
-Na camada `bronze`, os tipos poderão ser definidos automaticamente pela ferramenta de ingestão.
+Exemplo:
+
+```text
+olist_orders_dataset.csv → bronze.olist_orders_dataset
+```
+
+## 10. Estratégia de leitura dos arquivos
+
+O script deverá:
+
+- localizar os arquivos em `dados/brutos/`;
+- validar se todos os arquivos esperados existem;
+- ler cada CSV com `pandas`;
+- preservar os nomes originais das colunas;
+- carregar cada arquivo para uma tabela no schema `bronze`;
+- substituir a tabela em caso de nova execução;
+- registrar logs simples no terminal.
+
+## 11. Estratégia de escrita no PostgreSQL
+
+A escrita será feita no PostgreSQL usando `pandas.to_sql()` com SQLAlchemy.
+
+Na primeira fase, a estratégia será carga completa com substituição:
+
+```text
+if_exists='replace'
+```
+
+Essa decisão é aceitável porque:
+
+- a base é pública e estática;
+- a bronze representa aterrissagem inicial;
+- o foco do projeto está nas transformações dbt;
+- a carga precisa ser simples e reproduzível.
+
+## 12. Estratégia de tipos
+
+Na camada `bronze`, os tipos poderão ser inferidos automaticamente pelo pandas/SQLAlchemy.
 
 Como a bronze deve preservar a origem, não é obrigatório corrigir tipos nesta etapa.
 
@@ -132,22 +187,25 @@ Cuidados:
 - campos de identificador devem preservar seu conteúdo original;
 - valores nulos devem ser preservados.
 
-## 10. Metadados técnicos
+## 13. Estratégia de configuração
 
-A ferramenta de ingestão pode criar metadados técnicos.
+O script deve ler as configurações de conexão a partir de variáveis de ambiente.
 
-Exemplos possíveis:
+Variáveis esperadas:
 
-- identificador de carga;
-- timestamp de carga;
-- nome do arquivo;
-- campos internos da ferramenta.
+```env
+POSTGRES_USER=ecommerce_user
+POSTGRES_PASSWORD=ecommerce_password
+POSTGRES_DB=ecommerce_dw
+POSTGRES_PORT=5432
+POSTGRES_HOST=localhost
+```
 
-Esses metadados podem ser mantidos na bronze, desde que não alterem o significado dos dados originais.
+O arquivo `.env` deve ser usado localmente e não deve ser versionado.
 
-Se existirem metadados gerados pela ferramenta, eles deverão ser documentados na validação da ingestão.
+O arquivo `.env.example` deve ser versionado.
 
-## 11. Estratégia de validação
+## 14. Estratégia de validação
 
 Após a ingestão, devem ser validados:
 
@@ -179,7 +237,7 @@ from bronze.olist_orders_dataset
 limit 10;
 ```
 
-## 12. Critérios de aceite
+## 15. Critérios de aceite
 
 Este plano será considerado concluído quando:
 
@@ -187,49 +245,48 @@ Este plano será considerado concluído quando:
 - [ ] os arquivos CSV não estiverem versionados no Git;
 - [ ] o PostgreSQL estiver em execução;
 - [ ] o schema `bronze` existir;
-- [ ] a ferramenta de ingestão estiver configurada;
-- [ ] os arquivos forem carregados para o schema `bronze`;
+- [ ] existir um script Python de ingestão;
+- [ ] o script carregar os arquivos CSV para o schema `bronze`;
 - [ ] as tabelas esperadas existirem no PostgreSQL;
 - [ ] a contagem de registros for registrada;
 - [ ] uma amostra dos dados for validada;
 - [ ] nenhuma transformação analítica for aplicada na ingestão;
 - [ ] a validação da ingestão for registrada em `sdd/validacoes/`.
 
-## 13. Riscos e cuidados
+## 16. Riscos e cuidados
 
 Principais riscos:
 
-- Airbyte gerar nomes de tabelas diferentes dos nomes esperados;
-- Airbyte criar colunas técnicas adicionais;
-- problemas de rede entre Airbyte e PostgreSQL;
-- arquivos CSV com encoding incompatível;
+- arquivos CSV ausentes;
+- problemas de encoding;
 - inferência incorreta de tipos;
 - dados brutos serem versionados por engano;
+- falha de conexão com PostgreSQL;
+- substituição acidental de tabelas bronze;
 - transformação indevida durante a ingestão.
 
 Cuidados:
 
 - manter a bronze próxima da origem;
-- revisar nomes gerados pela ferramenta;
-- registrar diferenças encontradas;
+- não traduzir colunas na ingestão;
 - não corrigir dados na ingestão;
 - validar contagens após a carga;
-- manter decisões relevantes documentadas.
+- manter o script simples;
+- documentar qualquer comportamento inesperado.
 
-## 14. Pendências
+## 17. Pendências
 
-- [ ] Baixar a base pública da Olist.
-- [ ] Confirmar todos os arquivos esperados.
-- [ ] Definir instalação final do Airbyte local.
-- [ ] Configurar origem dos arquivos CSV.
-- [ ] Configurar destino PostgreSQL.
+- [ ] Criar pasta `ingestao/`.
+- [ ] Criar script `carregar_bronze_olist.py`.
+- [ ] Criar `requirements.txt`.
+- [ ] Atualizar `.env.example` com `POSTGRES_HOST`.
 - [ ] Executar primeira carga.
 - [ ] Registrar validação da ingestão bronze.
 
-## 15. Observações
+## 18. Observações
 
 A ingestão bronze é uma etapa de entrada do projeto.
 
 O objetivo não é demonstrar transformações nesta etapa, mas criar uma base rastreável para que o dbt possa executar as transformações nas camadas `silver` e `gold`.
 
-Caso a ingestão com Airbyte fique excessivamente complexa para o escopo do projeto, poderá ser aberta uma nova ADR avaliando uma alternativa temporária de ingestão via Python ou comando SQL.
+A decisão de não usar Airbyte nesta fase foi registrada para preservar o foco do projeto em dbt, testes, modelos incrementais e SDD.

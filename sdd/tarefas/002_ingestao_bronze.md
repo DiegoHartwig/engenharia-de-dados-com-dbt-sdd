@@ -8,12 +8,13 @@
 | Tipo | Ingestão |
 | Spec relacionada | `sdd/especificacoes/001_arquitetura.md` |
 | Plano relacionado | `sdd/planos/002_ingestao_bronze.md` |
-| Status | Não iniciado |
+| ADR relacionada | `sdd/decisoes/ADR-004-uso-de-ingestao-simples-via-python.md` |
+| Status | Em andamento |
 | Responsável | Diego Hartwig |
 
 ## 2. Objetivo
 
-Organizar as tarefas necessárias para baixar a base pública da Olist, armazenar os arquivos localmente, preparar a ingestão e carregar os dados no schema `bronze` do PostgreSQL, preservando os dados próximos da origem.
+Organizar as tarefas necessárias para carregar a base pública da Olist no schema `bronze` do PostgreSQL usando um script Python simples, preservando os dados próximos da origem.
 
 ## 3. Pré-requisitos
 
@@ -25,13 +26,12 @@ Antes de iniciar esta lista de tarefas, verificar:
 - [ ] O schema `silver` existe.
 - [ ] O schema `gold` existe.
 - [ ] A pasta `dados/brutos/` existe.
+- [ ] Os arquivos CSV da Olist estão em `dados/brutos/`.
 - [ ] O `.gitignore` ignora arquivos CSV em `dados/brutos/`.
 - [ ] O plano técnico de ingestão bronze existe.
-- [ ] A decisão ADR-001 sobre uso da bronze como landing zone foi registrada.
+- [ ] A ADR-004 sobre ingestão simples via Python foi registrada.
 
-## 4. Tarefas de download do dataset
-
-A base pública da Olist deve ser baixada e extraída localmente.
+## 4. Tarefas de validação dos arquivos locais
 
 Arquivos esperados:
 
@@ -49,123 +49,100 @@ product_category_name_translation.csv
 
 Tarefas:
 
-- [ ] Acessar a página do dataset público da Olist.
-- [ ] Baixar o arquivo compactado da base.
-- [ ] Extrair os arquivos CSV.
-- [ ] Copiar os CSVs para `dados/brutos/`.
-- [ ] Conferir se todos os arquivos esperados existem.
-- [ ] Garantir que os arquivos CSV não aparecem no `git status`.
-- [ ] Registrar qualquer arquivo ausente ou nome divergente.
-
-## 5. Tarefas de validação dos arquivos locais
-
-Executar conferência local dos arquivos.
-
-Tarefas:
-
 - [ ] Conferir quantidade de arquivos CSV em `dados/brutos/`.
 - [ ] Conferir nomes dos arquivos.
 - [ ] Conferir se os arquivos não estão vazios.
-- [ ] Conferir se os arquivos abrem corretamente em editor ou ferramenta de dados.
-- [ ] Conferir se o encoding não apresenta problema visual evidente.
-- [ ] Conferir se os separadores foram interpretados corretamente.
+- [ ] Conferir se os arquivos abrem corretamente.
+- [ ] Conferir se os CSVs não aparecem no `git status`.
 
-Comando sugerido no PowerShell:
+Comando sugerido:
 
 ```powershell
 Get-ChildItem dados\brutos
 ```
 
-## 6. Tarefas de preparação do destino PostgreSQL
+## 5. Tarefas de preparação do script
 
-Tarefas:
-
-- [ ] Confirmar que o container `engenharia_dados_dbt_postgres` está em execução.
-- [ ] Confirmar conexão com o banco `ecommerce_dw`.
-- [ ] Confirmar existência do schema `bronze`.
-- [ ] Confirmar usuário e senha de conexão.
-- [ ] Confirmar porta local do PostgreSQL.
-- [ ] Confirmar se o PostgreSQL poderá ser acessado pela ferramenta de ingestão.
-
-Comando sugerido:
-
-```powershell
-docker ps
-```
-
-Comando sugerido para conexão:
-
-```powershell
-docker exec -it engenharia_dados_dbt_postgres psql -U ecommerce_user -d ecommerce_dw
-```
-
-Consulta sugerida:
-
-```sql
-select schema_name
-from information_schema.schemata
-where schema_name = 'bronze';
-```
-
-## 7. Tarefas de definição dos nomes das tabelas bronze
-
-As tabelas esperadas na camada bronze são:
+Criar estrutura:
 
 ```text
-bronze.olist_customers_dataset
-bronze.olist_geolocation_dataset
-bronze.olist_order_items_dataset
-bronze.olist_order_payments_dataset
-bronze.olist_order_reviews_dataset
-bronze.olist_orders_dataset
-bronze.olist_products_dataset
-bronze.olist_sellers_dataset
-bronze.product_category_name_translation
+ingestao/
+├── carregar_bronze_olist.py
+└── README.md
 ```
 
 Tarefas:
 
-- [ ] Confirmar se a ferramenta de ingestão permite definir os nomes das tabelas.
-- [ ] Preservar nomes próximos aos arquivos originais.
-- [ ] Evitar tradução de nomes na bronze.
-- [ ] Evitar renomeações analíticas na bronze.
-- [ ] Registrar divergências de nomes geradas pela ferramenta.
+- [ ] Criar pasta `ingestao/`.
+- [ ] Criar arquivo `ingestao/carregar_bronze_olist.py`.
+- [ ] Criar arquivo `ingestao/README.md`.
+- [ ] Criar ou atualizar `requirements.txt`.
+- [ ] Adicionar dependências necessárias.
 
-## 8. Tarefas de configuração da ingestão
-
-A estratégia prevista é:
+Dependências previstas:
 
 ```text
-CSV Olist → Airbyte → PostgreSQL bronze
+pandas
+sqlalchemy
+psycopg2-binary
+python-dotenv
+```
+
+## 6. Tarefas de configuração de ambiente
+
+Variáveis esperadas no `.env`:
+
+```env
+POSTGRES_HOST=localhost
+POSTGRES_USER=ecommerce_user
+POSTGRES_PASSWORD=ecommerce_password
+POSTGRES_DB=ecommerce_dw
+POSTGRES_PORT=5432
 ```
 
 Tarefas:
 
-- [ ] Instalar ou subir o Airbyte localmente.
-- [ ] Configurar origem dos arquivos CSV.
-- [ ] Configurar destino PostgreSQL.
-- [ ] Definir database `ecommerce_dw`.
-- [ ] Definir schema de destino `bronze`.
-- [ ] Definir credenciais de conexão.
-- [ ] Testar conexão com origem.
-- [ ] Testar conexão com destino.
-- [ ] Criar conexão de sincronização.
-- [ ] Garantir que a ingestão não aplica transformação analítica.
+- [ ] Adicionar `POSTGRES_HOST` no `.env`.
+- [ ] Adicionar `POSTGRES_HOST` no `.env.example`.
+- [ ] Confirmar que `.env` não aparece no Git.
+- [ ] Confirmar que `.env.example` está versionado.
 
-## 9. Tarefas de execução da ingestão
+## 7. Tarefas de implementação do script
+
+O script deve:
+
+- [ ] Ler variáveis de ambiente com `python-dotenv`.
+- [ ] Montar string de conexão PostgreSQL com SQLAlchemy.
+- [ ] Validar existência da pasta `dados/brutos/`.
+- [ ] Validar existência de todos os arquivos esperados.
+- [ ] Ler cada CSV com pandas.
+- [ ] Preservar os nomes originais das colunas.
+- [ ] Criar/carregar tabelas no schema `bronze`.
+- [ ] Usar nome do arquivo sem `.csv` como nome da tabela.
+- [ ] Usar carga full com substituição da tabela.
+- [ ] Exibir logs simples de início, fim e quantidade de registros.
+- [ ] Encerrar com erro claro se algum arquivo esperado não existir.
+
+## 8. Tarefas de execução da ingestão
+
+Comando previsto:
+
+```powershell
+python ingestao\carregar_bronze_olist.py
+```
 
 Tarefas:
 
-- [ ] Executar carga dos arquivos CSV.
-- [ ] Acompanhar logs da ingestão.
-- [ ] Verificar se a carga finalizou com sucesso.
-- [ ] Registrar erros, se houver.
-- [ ] Corrigir configuração caso alguma tabela não seja carregada.
-- [ ] Reexecutar ingestão se necessário.
+- [ ] Criar ambiente virtual, se necessário.
+- [ ] Instalar dependências com `pip install -r requirements.txt`.
+- [ ] Executar o script de ingestão.
+- [ ] Validar logs no terminal.
+- [ ] Corrigir erros, se houver.
+- [ ] Reexecutar carga, se necessário.
 
-## 10. Tarefas de validação das tabelas bronze
+## 9. Tarefas de validação das tabelas bronze
 
-Após a ingestão, validar as tabelas criadas.
+Após a ingestão, validar tabelas criadas.
 
 Consulta sugerida:
 
@@ -184,7 +161,7 @@ Tarefas:
 - [ ] Registrar tabelas ausentes, se houver.
 - [ ] Registrar tabelas adicionais, se houver.
 
-## 11. Tarefas de contagem de registros
+## 10. Tarefas de contagem de registros
 
 Registrar contagem de registros por tabela.
 
@@ -213,7 +190,7 @@ Tarefas:
 - [ ] Contar registros de tradução de categorias.
 - [ ] Registrar contagens na validação.
 
-## 12. Tarefas de amostragem dos dados
+## 11. Tarefas de amostragem dos dados
 
 Validar amostras das tabelas carregadas.
 
@@ -243,7 +220,7 @@ Tarefas:
 - [ ] Validar amostra de geolocalização.
 - [ ] Validar amostra de tradução de categorias.
 
-## 13. Tarefas de preservação da bronze
+## 12. Tarefas de preservação da bronze
 
 Confirmar que a bronze foi mantida próxima da origem.
 
@@ -254,10 +231,9 @@ Tarefas:
 - [ ] Confirmar que não houve filtro analítico.
 - [ ] Confirmar que não houve agregação.
 - [ ] Confirmar que não houve deduplicação intencional.
-- [ ] Confirmar se metadados técnicos foram criados pela ferramenta.
-- [ ] Registrar metadados técnicos, se existirem.
+- [ ] Confirmar que não houve regra de negócio aplicada.
 
-## 14. Tarefas de validação SDD
+## 13. Tarefas de validação SDD
 
 Criar registro de validação em:
 
@@ -268,43 +244,42 @@ sdd/validacoes/002_ingestao_bronze.md
 A validação deve conter:
 
 - data da execução;
-- ferramenta utilizada;
+- script utilizado;
 - arquivos carregados;
 - tabelas criadas;
 - contagens de registros;
 - observações sobre nomes e tipos;
-- metadados técnicos, se existirem;
 - pendências;
 - conclusão.
 
 Tarefas:
 
 - [ ] Criar arquivo de validação.
-- [ ] Registrar comandos ou passos executados.
+- [ ] Registrar comando executado.
 - [ ] Registrar lista de arquivos CSV.
 - [ ] Registrar lista de tabelas bronze.
 - [ ] Registrar contagens.
 - [ ] Registrar divergências.
 - [ ] Registrar conclusão da ingestão.
 
-## 15. Tarefas de versionamento
+## 14. Tarefas de versionamento
 
 - [ ] Executar `git status`.
 - [ ] Confirmar que os CSVs não aparecem no Git.
 - [ ] Confirmar que `.env` não aparece no Git.
-- [ ] Versionar apenas documentos e configurações.
-- [ ] Fazer commit da tarefa, plano ou validação.
+- [ ] Versionar script, documentação e configurações.
+- [ ] Fazer commit dos arquivos criados.
 - [ ] Enviar alterações para o GitHub.
 
-Commit sugerido para esta lista de tarefas:
+Commit sugerido para atualização do planejamento:
 
 ```powershell
-git add sdd/tarefas/002_ingestao_bronze.md
-git commit -m "docs: adiciona tarefas da ingestao bronze"
+git add sdd/planos/002_ingestao_bronze.md sdd/tarefas/002_ingestao_bronze.md
+git commit -m "docs: atualiza planejamento da ingestao bronze via python"
 git push
 ```
 
-## 16. Critérios de conclusão
+## 15. Critérios de conclusão
 
 Esta lista de tarefas será considerada concluída quando:
 
@@ -312,23 +287,23 @@ Esta lista de tarefas será considerada concluída quando:
 - [ ] os CSVs estiverem ignorados pelo Git;
 - [ ] o PostgreSQL estiver em execução;
 - [ ] o schema `bronze` existir;
+- [ ] o script Python de ingestão existir;
 - [ ] as tabelas bronze forem criadas;
 - [ ] as contagens forem registradas;
 - [ ] amostras forem validadas;
 - [ ] a bronze preservar os dados próximos da origem;
 - [ ] a validação `sdd/validacoes/002_ingestao_bronze.md` existir;
-- [ ] as alterações documentais estiverem versionadas no GitHub.
+- [ ] as alterações estiverem versionadas no GitHub.
 
-## 17. Pendências
+## 16. Pendências
 
-- [ ] Baixar a base da Olist.
-- [ ] Definir configuração final do Airbyte.
+- [ ] Criar script de ingestão.
 - [ ] Executar ingestão.
 - [ ] Registrar validação.
 - [ ] Iniciar configuração do dbt após carga bronze.
 
-## 18. Observações
+## 17. Observações
 
 A ingestão bronze deve ser simples e rastreável.
 
-Qualquer dificuldade relevante com Airbyte deverá ser registrada. Caso seja necessário substituir temporariamente a ingestão por outro método, uma nova ADR deverá ser criada explicando a decisão.
+A decisão de substituir Airbyte por Python foi tomada para evitar complexidade desnecessária nesta fase e manter o foco do projeto em dbt e SDD.
