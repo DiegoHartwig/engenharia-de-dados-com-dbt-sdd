@@ -1,0 +1,7 @@
+version: 2
+
+# Os modelos da camada gold serão documentados aqui conforme forem implementados.
+# A camada gold entrega fatos, dimensões e marts analíticos para consumo final.
+# Consulte sdd/constituicao.md para entender as responsabilidades desta camada.
+
+models: []

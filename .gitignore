@@ -18,6 +18,8 @@ dbt/target/
 dbt/dbt_packages/
 dbt/logs/
 dbt/.user.yml
+profiles.yml
+dbt/profiles.yml
 
 # Sistema
 .DS_Store

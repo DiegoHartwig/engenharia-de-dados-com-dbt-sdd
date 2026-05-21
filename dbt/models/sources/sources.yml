@@ -1,0 +1,55 @@
+version: 2
+
+sources:
+  - name: olist_bronze
+    description: >
+      Tabelas da camada bronze da base pública Olist, carregadas via script Python
+      de ingestão simples. Os dados estão próximos da origem, sem regras de negócio,
+      deduplicação ou transformações analíticas aplicadas.
+    database: ecommerce_dw
+    schema: bronze
+    tables:
+      - name: olist_customers_dataset
+        description: >
+          Dados de clientes da Olist. Tabela bronze preservada da origem.
+          Contém identificador único do cliente, cidade, estado e código postal.
+
+      - name: olist_geolocation_dataset
+        description: >
+          Dados de geolocalização por CEP. Tabela bronze preservada da origem.
+          Contém latitude, longitude, cidade e estado para cada código postal.
+
+      - name: olist_order_items_dataset
+        description: >
+          Itens de cada pedido da Olist. Tabela bronze preservada da origem.
+          Contém identificador do pedido, produto, vendedor, preço e frete.
+
+      - name: olist_order_payments_dataset
+        description: >
+          Pagamentos dos pedidos da Olist. Tabela bronze preservada da origem.
+          Contém tipo de pagamento, parcelas e valor pago por pedido.
+
+      - name: olist_order_reviews_dataset
+        description: >
+          Avaliações dos pedidos feitas pelos clientes. Tabela bronze preservada da origem.
+          Contém nota, título, comentário e datas de criação e resposta.
+
+      - name: olist_orders_dataset
+        description: >
+          Pedidos da Olist. Tabela bronze preservada da origem.
+          Contém identificador do pedido, cliente, status e datas do ciclo de vida do pedido.
+
+      - name: olist_products_dataset
+        description: >
+          Produtos disponíveis na plataforma Olist. Tabela bronze preservada da origem.
+          Contém categoria, dimensões, peso e quantidade de fotos do produto.
+
+      - name: olist_sellers_dataset
+        description: >
+          Vendedores cadastrados na Olist. Tabela bronze preservada da origem.
+          Contém identificador do vendedor, código postal, cidade e estado.
+
+      - name: product_category_name_translation
+        description: >
+          Tradução dos nomes de categorias de produtos do português para o inglês.
+          Tabela bronze preservada da origem, sem transformações aplicadas.

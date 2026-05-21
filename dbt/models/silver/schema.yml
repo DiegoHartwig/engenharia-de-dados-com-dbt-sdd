@@ -1,0 +1,7 @@
+version: 2
+
+# Os modelos da camada silver serão documentados aqui conforme forem implementados.
+# A camada silver aplica limpeza, padronização, tipagem e regras de negócio sobre os dados bronze.
+# Consulte sdd/constituicao.md para entender as responsabilidades desta camada.
+
+models: []
