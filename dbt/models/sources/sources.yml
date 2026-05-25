@@ -1,12 +1,12 @@
 version: 2
 
 sources:
-  - name: olist_bronze
+  - name: bronze
     description: >
       Tabelas da camada bronze da base pública Olist, carregadas via script Python
       de ingestão simples. Os dados estão próximos da origem, sem regras de negócio,
       deduplicação ou transformações analíticas aplicadas.
-    database: ecommerce_dw
+    database: engenharia_dados
     schema: bronze
     tables:
       - name: olist_customers_dataset

@@ -156,7 +156,7 @@ Para referenciar uma tabela bronze em um modelo dbt, use:
 
 ```sql
 select *
-from {{ source('olist_bronze', 'olist_orders_dataset') }}
+from {{ source('bronze', 'olist_orders_dataset') }}
 ```
 
 ## Convenções do projeto

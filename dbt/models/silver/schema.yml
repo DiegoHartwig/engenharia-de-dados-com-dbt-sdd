@@ -1,7 +1,53 @@
 version: 2
 
-# Os modelos da camada silver serão documentados aqui conforme forem implementados.
-# A camada silver aplica limpeza, padronização, tipagem e regras de negócio sobre os dados bronze.
+# Camada silver: dados limpos, padronizados e qualificados.
 # Consulte sdd/constituicao.md para entender as responsabilidades desta camada.
 
-models: []
+models:
+  - name: silver_clientes
+    description: >
+      Entidade tratada de clientes da Olist, gerada a partir da tabela bronze
+      `olist_customers_dataset`. Aplica limpeza de espaços, padronização de
+      maiúsculas/minúsculas e renomeação de colunas para o padrão do projeto em
+      português. Preserva a granularidade original: um registro por `customer_id`.
+    columns:
+      - name: id_cliente
+        description: >
+          Identificador único do cliente no pedido. Corresponde à coluna
+          `customer_id` da bronze, com `trim()` aplicado.
+        tests:
+          - not_null
+          - unique
+
+      - name: id_cliente_unico
+        description: >
+          Identificador único do cliente na plataforma, independente do pedido.
+          Um mesmo cliente pode ter múltiplos `id_cliente`, mas um único
+          `id_cliente_unico`. Corresponde à coluna `customer_unique_id` da bronze,
+          com `trim()` aplicado.
+        tests:
+          - not_null
+
+      - name: prefixo_cep_cliente
+        description: >
+          Prefixo do CEP do endereço de entrega do cliente. Preservado sem
+          transformação de regra de negócio. Corresponde à coluna
+          `customer_zip_code_prefix` da bronze.
+        tests:
+          - not_null
+
+      - name: cidade_cliente
+        description: >
+          Cidade do endereço de entrega do cliente, padronizada em letras
+          minúsculas com `lower(trim())`. Corresponde à coluna `customer_city`
+          da bronze.
+        tests:
+          - not_null
+
+      - name: estado_cliente
+        description: >
+          Estado (UF) do endereço de entrega do cliente, padronizado em letras
+          maiúsculas com `upper(trim())`. Corresponde à coluna `customer_state`
+          da bronze.
+        tests:
+          - not_null
