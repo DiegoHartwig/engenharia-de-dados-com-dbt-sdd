@@ -51,3 +51,64 @@ models:
           da bronze.
         tests:
           - not_null
+
+  - name: silver_pedidos
+    description: >
+      Modelo silver de pedidos da Olist, gerado a partir da tabela bronze
+      `olist_orders_dataset`. Aplica limpeza de espaços, padronização de
+      maiúsculas/minúsculas, tipagem de campos de data/hora e renomeação de
+      colunas para o padrão do projeto em português. Preserva a granularidade
+      original: um registro por `order_id`.
+    columns:
+      - name: id_pedido
+        description: >
+          Identificador único do pedido. Corresponde à coluna `order_id` da
+          bronze, com `trim()` aplicado.
+        tests:
+          - not_null
+          - unique
+
+      - name: id_cliente
+        description: >
+          Identificador do cliente associado ao pedido. Corresponde à coluna
+          `customer_id` da bronze, com `trim()` aplicado.
+        tests:
+          - not_null
+
+      - name: status_pedido
+        description: >
+          Status do pedido padronizado em letras minúsculas com
+          `lower(trim())`. Corresponde à coluna `order_status` da bronze.
+        tests:
+          - not_null
+
+      - name: data_hora_compra
+        description: >
+          Data e hora em que o pedido foi realizado, tipada como timestamp.
+          Corresponde à coluna `order_purchase_timestamp` da bronze.
+        tests:
+          - not_null
+
+      - name: data_hora_aprovacao
+        description: >
+          Data e hora em que o pedido foi aprovado, tipada como timestamp.
+          Corresponde à coluna `order_approved_at` da bronze. Pode ser nula.
+
+      - name: data_hora_entrega_transportadora
+        description: >
+          Data e hora em que o pedido foi entregue à transportadora, tipada
+          como timestamp. Corresponde à coluna `order_delivered_carrier_date`
+          da bronze. Pode ser nula.
+
+      - name: data_hora_entrega_cliente
+        description: >
+          Data e hora em que o pedido foi entregue ao cliente, tipada como
+          timestamp. Corresponde à coluna `order_delivered_customer_date` da
+          bronze. Pode ser nula.
+
+      - name: data_estimada_entrega
+        description: >
+          Data estimada de entrega do pedido, tipada como timestamp.
+          Corresponde à coluna `order_estimated_delivery_date` da bronze.
+        tests:
+          - not_null
